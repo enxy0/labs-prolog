@@ -21,7 +21,8 @@ predicates
     rule2(symbol, symbol, symbol, symbol, symbol, symbol, symbol, symbol)
     rule3(symbol, symbol, symbol, symbol, symbol, symbol, symbol, symbol)
     find_all(symbol, symbol, symbol, symbol, symbol, symbol, symbol, symbol)
-    find_task(symbol, symbol, symbol, symbol, symbol, symbol, symbol, symbol, symbol, symbol)
+    solve(symbol, symbol, symbol, symbol, symbol, symbol, symbol, symbol, symbol, symbol)
+    unique(symbol, symbol, symbol, symbol)
 
 clauses
     man("кузнецов").
@@ -34,6 +35,7 @@ clauses
     profession("слесарь").
     profession("резчик").
 
+    % Отбрасываем варианты, когда фамилия = профессия
     rule0("кузнецов", "кузнец") :- !, fail.
     rule0("токарев", "токарь") :- !, fail.
     rule0("слесарев", "слесарь") :- !, fail.
@@ -49,43 +51,54 @@ clauses
     % UP - Профессия игрока сверху
     % L - Фамилия игрока справа
     % LP - Профессия игрока справа
+    
+    % Напротив Кузнецова сидит слесарь
     rule1(D, DP, L, LP, U, UP, R, RP) :-
         D = "кузнецов", UP = "слесарь";
         L = "кузнецов", RP = "слесарь";
         U = "кузнецов", DP = "слесарь";
         R = "кузнецов", LP = "слесарь".
+
+    % Напротив Резчикова сидит резчик
     rule2(D, DP, L, LP, U, UP, R, RP) :-
         D = "резчиков", UP = "резчик";
         L = "резчиков", RP = "резчик";
         U = "резчиков", DP = "резчик";
         R = "резчиков", LP = "резчик".
+
+    % Справа от Слесарева сидит токарь
     rule3(D, DP, L, LP, U, UP, R, RP) :-
         D = "слесарев", RP = "токарь";
         L = "слесарев", DP = "токарь";
         U = "слесарев", LP = "токарь";
         R = "слесарев", UP = "токарь".
 
+    % Находим каждого
     find_all(D, DP, L, LP, U, UP, R, RP) :-
         rule0(D, DP), rule0(L, LP), rule0(U, UP), rule0(R, RP),
         rule1(D, DP, L, LP, U, UP, R, RP),
         rule2(D, DP, L, LP, U, UP, R, RP),
         rule3(D, DP, L, LP, U, UP, R, RP).
 
-    find_task(_, "кузнец", L, LP, _, _, _, _, L, LP).
-    find_task(_, _, _, "кузнец", U, UP, _, _, U, UP).
-    find_task(_, _, _, _, _, "кузнец", R, RP, R, RP).
-    find_task(D, DP, _, _, _, _, _, "кузнец", D, DP).
+    % Кто сидит слева от кузнеца?
+    solve(_, "кузнец", L, LP, _, _, _, _, L, LP).
+    solve(_, _, _, "кузнец", U, UP, _, _, U, UP).
+    solve(_, _, _, _, _, "кузнец", R, RP, R, RP).
+    solve(D, DP, _, _, _, _, _, "кузнец", D, DP).
+
+    unique(A, B, C, D):- A <> B, A <> C, A <> D, B <> C, B <> D, C <> D.
 
 goal
     D = "кузнецов",
-    man(L), man(U), man(R),
-    D <> L, D <> U, D <> R, L <> U, L <> R, U <> R,
-    profession(DP), profession(LP), profession(UP), profession(RP),
-    DP <> LP, DP <> UP, DP <> RP, LP <> UP, LP <> RP, UP <> RP,
+    man(L), man(U), man(R), 
+    unique(D, L, U, R),
+    profession(DP), profession(LP), profession(UP), profession(RP), 
+    unique(DP, LP, UP, RP),
     find_all(D, DP, L, LP, U, UP, R, RP),
     write("Снизу сидит ", D, ", профессия - ", DP), nl,
     write("Слева сидит ", L, ", профессия - ", LP), nl,
     write("Сверху сидит ", U, ", профессия - ", UP), nl,
     write("Справа сидит ", R, ", профессия - ", RP), nl,
-    find_task(D, DP, L, LP, U, UP, R, RP, SOLUTION, SOLUTION_PROF),
+    
+    solve(D, DP, L, LP, U, UP, R, RP, SOLUTION, SOLUTION_PROF),
     write("Решение: слева от кузнеца сидит ", SOLUTION, ", профессия - ", SOLUTION_PROF), nl.
